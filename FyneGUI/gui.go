@@ -96,7 +96,7 @@ func Createfyne(db *sql.DB) {
 	updateLabel.Alignment = fyne.TextAlignCenter
 	updateLabel.TextSize = 15
 	updateContainer := container.NewHBox(updateLabel)
-
+	//送出按鈕，把資料輸入至資料庫儲存
 	sentButton := widget.NewButton("Sent", func() {
 		inputdata.Name = nameEntry.Text
 		cost := costEntry.Text
@@ -127,7 +127,7 @@ func Createfyne(db *sql.DB) {
 
 	middleWindow := container.NewHBox(nameContainer, costContainer, amountContainer, sentButton, updateContainer)
 
-	// 下方視窗; 負責顯示此次新增的資料
+	// 下方視窗; 負責顯示所有總量的資料
 	curprice := canvas.NewText("", color.NRGBA{R: 0, G: 120, B: 120, A: 255})
 	curprice.Alignment = fyne.TextAlignTrailing
 	curprice.TextSize = 15
