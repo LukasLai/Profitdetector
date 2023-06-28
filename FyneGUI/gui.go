@@ -29,6 +29,8 @@ type Inputdata struct {
 }
 
 var curPriceText *canvas.Text
+var curValue *canvas.Text
+var totalAmountProift int
 
 func Createfyne(db *sql.DB) {
 	//把總量、總花費以及平均儲存進去結構
@@ -37,6 +39,7 @@ func Createfyne(db *sql.DB) {
 	if err != nil {
 		panic(err)
 	}
+	totalAmountProift = t.Totalamount
 
 	err = db.QueryRow("SELECT SUM(cost) FROM cryptolist").Scan(&t.Totalcost)
 	if err != nil {
@@ -50,7 +53,7 @@ func Createfyne(db *sql.DB) {
 	//=========================================================================================================
 	a := app.New()
 	w := a.NewWindow("Window Example")
-	w.Resize(fyne.NewSize(500, 500))
+	w.Resize(fyne.NewSize(700, 500))
 
 	// 上方視窗;
 	inputdata := Inputdata{} //儲存輸入資料的結構
@@ -140,7 +143,34 @@ func Createfyne(db *sql.DB) {
 		"       Cost: $"+strconv.Itoa(t.Totalcost)+"        Avgprice :"+fmt.Sprintf("%.2f", t.Totalavgprice), color.Black)
 	bottomLabel.Alignment = fyne.TextAlignCenter
 	bottomLabel.TextSize = 15
-	bottomWindow := container.NewVBox(curprice, topic2, bottomLabel)
+
+	resetButton := widget.NewButton("Reset", func() {
+		t := Total{}
+		err := db.QueryRow("SELECT SUM(amount) FROM cryptolist").Scan(&t.Totalamount)
+		if err != nil {
+			panic(err)
+		}
+
+		err = db.QueryRow("SELECT SUM(cost) FROM cryptolist").Scan(&t.Totalcost)
+		if err != nil {
+			panic(err)
+		}
+		err = db.QueryRow("SELECT SUM(cost)/SUM(amount) FROM cryptolist").Scan(&t.Totalavgprice)
+		if err != nil {
+			panic(err)
+		}
+		bottomLabel.Text = fmt.Sprintf("Name: BTC       Amount: "+strconv.Itoa(t.Totalamount)+
+			"       Cost: $"+strconv.Itoa(t.Totalcost)+"        Avgprice :"+fmt.Sprintf("%.2f", t.Totalavgprice), color.Black)
+		bottomLabel.Refresh()
+		fmt.Println("Reset觸發")
+	})
+	middleWindow.Add(resetButton)
+
+	//總量現價
+	curValue = canvas.NewText("Current Value: $0.00", color.NRGBA{R: 231, G: 171, B: 78, A: 255})
+	curValue.Alignment = fyne.TextAlignLeading
+	curValue.TextSize = 18
+	bottomWindow := container.NewVBox(curValue, curprice, topic2, bottomLabel)
 
 	// 將視窗組合並排列
 	content := container.NewVBox(
@@ -154,15 +184,6 @@ func Createfyne(db *sql.DB) {
 	w.SetContent(content)
 	w.ShowAndRun()
 }
-
-/*func Currentprice(price string) {
-	floatPrice, err := strconv.ParseFloat(price, 64)
-	if err != nil {
-		fmt.Println("無法轉換為 float64")
-		return
-	}
-
-}*/
 
 // 把此次新增的交易新增到database
 func insertinfo(db *sql.DB, name string, amount, cost, avgcost float64) {
@@ -185,6 +206,22 @@ func Updatecurrentprice(price string) {
 		return
 	}
 	fmt.Println("順利進入Updatacurrentprice")
+	value := totalAmountProift * int(floatPrice)
+	formattedValue := strconv.FormatInt(int64(value), 10)
+	formattedValueWithCommas := addCommas(formattedValue)
+
 	curPriceText.Text = "Current Price: $" + fmt.Sprintf("%.2f", floatPrice)
+	curValue.Text = "Current Value: $" + formattedValueWithCommas
+
 	curPriceText.Refresh()
+	curValue.Refresh()
+}
+
+// 為總資產的數字放上標點符號
+func addCommas(s string) string {
+	n := len(s)
+	if n <= 3 {
+		return s
+	}
+	return addCommas(s[:n-3]) + "," + s[n-3:]
 }
