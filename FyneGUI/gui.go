@@ -30,7 +30,9 @@ type Inputdata struct {
 
 var curPriceText *canvas.Text
 var curValue *canvas.Text
+var curProfit *canvas.Text
 var totalAmountProift int
+var totalCost int
 
 func Createfyne(db *sql.DB) {
 	//把總量、總花費以及平均儲存進去結構
@@ -45,6 +47,7 @@ func Createfyne(db *sql.DB) {
 	if err != nil {
 		panic(err)
 	}
+	totalCost = t.Totalcost
 	err = db.QueryRow("SELECT SUM(cost)/SUM(amount) FROM cryptolist").Scan(&t.Totalavgprice)
 	if err != nil {
 		panic(err)
@@ -150,11 +153,12 @@ func Createfyne(db *sql.DB) {
 		if err != nil {
 			panic(err)
 		}
-
+		totalAmountProift = t.Totalamount
 		err = db.QueryRow("SELECT SUM(cost) FROM cryptolist").Scan(&t.Totalcost)
 		if err != nil {
 			panic(err)
 		}
+		totalCost = t.Totalcost
 		err = db.QueryRow("SELECT SUM(cost)/SUM(amount) FROM cryptolist").Scan(&t.Totalavgprice)
 		if err != nil {
 			panic(err)
@@ -170,7 +174,12 @@ func Createfyne(db *sql.DB) {
 	curValue = canvas.NewText("Current Value: $0.00", color.NRGBA{R: 231, G: 171, B: 78, A: 255})
 	curValue.Alignment = fyne.TextAlignLeading
 	curValue.TextSize = 18
-	bottomWindow := container.NewVBox(curValue, curprice, topic2, bottomLabel)
+
+	curProfit = canvas.NewText("Total Profit: +0.00", color.NRGBA{R: 231, G: 171, B: 78, A: 255})
+	curProfit.Alignment = fyne.TextAlignLeading
+	curProfit.TextSize = 18
+
+	bottomWindow := container.NewVBox(curValue, curProfit, topic2, bottomLabel)
 
 	// 將視窗組合並排列
 	content := container.NewVBox(
@@ -206,14 +215,26 @@ func Updatecurrentprice(price string) {
 		return
 	}
 	fmt.Println("順利進入Updatacurrentprice")
+	//計算總價值
 	value := totalAmountProift * int(floatPrice)
 	formattedValue := strconv.FormatInt(int64(value), 10)
 	formattedValueWithCommas := addCommas(formattedValue)
+	//計算總獲利
+	profit := value - totalCost
+	formattedProfit := strconv.FormatInt(int64(profit), 10)
+	formattedProfitWithCommas := addCommas(formattedProfit)
+	//計算總獲利%數
+	percentProfitBasis := value / totalCost
+	percentProfit := percentProfitBasis * 100
+	formattedPercentProfit := strconv.FormatInt(int64(percentProfit), 10)
+	formattedPercentProfitWithCommas := addCommas(formattedPercentProfit)
 
 	curPriceText.Text = "Current Price: $" + fmt.Sprintf("%.2f", floatPrice)
+	curProfit.Text = "Total Profit: +" + formattedProfitWithCommas + "(" + formattedPercentProfitWithCommas + "%)"
 	curValue.Text = "Current Value: $" + formattedValueWithCommas
 
 	curPriceText.Refresh()
+	curProfit.Refresh()
 	curValue.Refresh()
 }
 
