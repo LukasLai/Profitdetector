@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"image/color"
+	"log"
 	"strconv"
 
 	"fyne.io/fyne/v2"
@@ -16,8 +17,8 @@ import (
 )
 
 type Total struct {
-	Totalamount   int
-	Totalcost     int
+	Totalamount   float64
+	Totalcost     float64
 	Totalavgprice float64
 }
 
@@ -31,31 +32,34 @@ type Inputdata struct {
 var curPriceText *canvas.Text
 var curValue *canvas.Text
 var curProfit *canvas.Text
-var totalAmountProift int
-var totalCost int
+var totalAmountProift float64
+var totalCost float64
 
 func Createfyne(db *sql.DB) {
 	//把總量、總花費以及平均儲存進去結構
 	t := Total{} //儲存總資料的結構
 	err := db.QueryRow("SELECT SUM(amount) FROM cryptolist").Scan(&t.Totalamount)
 	if err != nil {
-		panic(err)
+		log.Println("Failed to Select SUM(amount): ", err)
+		return
 	}
 	totalAmountProift = t.Totalamount
 
 	err = db.QueryRow("SELECT SUM(cost) FROM cryptolist").Scan(&t.Totalcost)
 	if err != nil {
-		panic(err)
+		log.Println("Failed to Select SUM(cost): ", err)
+		return
 	}
 	totalCost = t.Totalcost
 	err = db.QueryRow("SELECT SUM(cost)/SUM(amount) FROM cryptolist").Scan(&t.Totalavgprice)
 	if err != nil {
-		panic(err)
+		log.Println("Failed to Select SUM(cost)/SUM(amount): ", err)
+		return
 	}
 
 	//=========================================================================================================
 	a := app.New()
-	w := a.NewWindow("Window Example")
+	w := a.NewWindow("BTC Profitdector")
 	w.Resize(fyne.NewSize(700, 500))
 
 	// 上方視窗;
@@ -70,9 +74,9 @@ func Createfyne(db *sql.DB) {
 	topic1.Alignment = fyne.TextAlignLeading // 將對齊方式設定為置左
 	topic1.TextSize = 20
 
-	label := canvas.NewText("Name: BTC        Amount: "+fmt.Sprintf("%.2f", inputdata.Amount)+
+	label := canvas.NewText("Name: BTC        Amount: "+fmt.Sprintf("%.4f", inputdata.Amount)+
 		"        Cost: $"+fmt.Sprintf("%f", inputdata.Cost)+
-		"        Averageprice: "+fmt.Sprintf("%.2f", inputdata.Avg), color.Black)
+		"        Averageprice: "+fmt.Sprintf("%.4f", inputdata.Avg), color.Black)
 	label.Alignment = fyne.TextAlignCenter
 	label.TextSize = 15
 	//現價顯示
@@ -99,9 +103,9 @@ func Createfyne(db *sql.DB) {
 	amountContainer := container.NewHBox(amountLabel, amountEntry)
 
 	updateLabel := canvas.NewText("", color.NRGBA{R: 255, G: 0, B: 0, A: 255})
-	updateLabel.Alignment = fyne.TextAlignCenter
+	updateLabel.Alignment = fyne.TextAlignLeading
 	updateLabel.TextSize = 15
-	updateContainer := container.NewHBox(updateLabel)
+
 	//送出按鈕，把資料輸入至資料庫儲存
 	sentButton := widget.NewButton("Sent", func() {
 		inputdata.Name = nameEntry.Text
@@ -109,12 +113,12 @@ func Createfyne(db *sql.DB) {
 		amount := amountEntry.Text
 		floatAmount, err := strconv.ParseFloat(amount, 64)
 		if err != nil {
-			fmt.Println("無法轉換為 float64")
+			log.Println("Failed to parse floatAmount: ", err)
 			return
 		}
 		floatCost, err := strconv.ParseFloat(cost, 64)
 		if err != nil {
-			fmt.Println("無法轉換為 float64")
+			log.Println("Failed to parse floatCost: ", err)
 			return
 		}
 		avg := floatCost / floatAmount
@@ -122,16 +126,16 @@ func Createfyne(db *sql.DB) {
 		inputdata.Amount = floatAmount
 		inputdata.Cost = floatCost
 		inputdata.Avg = avg
-		label.Text = "Name: " + inputdata.Name + "        Amount: " + fmt.Sprintf("%.2f", inputdata.Amount) +
-			"        Cost: $" + fmt.Sprintf("%.2f", inputdata.Cost) +
-			"        Averageprice: " + fmt.Sprintf("%.2f", inputdata.Avg)
+		label.Text = "Name: " + inputdata.Name + "        Amount: " + fmt.Sprintf("%.4f", inputdata.Amount) +
+			"        Cost: $" + fmt.Sprintf("%.4f", inputdata.Cost) +
+			"        Averageprice: " + fmt.Sprintf("%.4f", inputdata.Avg)
 		insertinfo(db, inputdata.Name, inputdata.Amount, inputdata.Cost, inputdata.Avg)
 		updateLabel.Text = "Data Updated!"
 		updateLabel.Refresh()
 		label.Refresh()
 	})
-
-	middleWindow := container.NewHBox(nameContainer, costContainer, amountContainer, sentButton, updateContainer)
+	middleHBox := container.NewHBox(nameContainer, costContainer, amountContainer, sentButton)
+	middleWindow := container.NewVBox(updateLabel, middleHBox)
 
 	// 下方視窗; 負責顯示所有總量的資料
 	curprice := canvas.NewText("", color.NRGBA{R: 0, G: 120, B: 120, A: 255})
@@ -142,8 +146,8 @@ func Createfyne(db *sql.DB) {
 	topic2.Alignment = fyne.TextAlignLeading
 	topic2.TextSize = 20
 
-	bottomLabel := canvas.NewText("Name: BTC       Amount: "+strconv.Itoa(t.Totalamount)+
-		"       Cost: $"+strconv.Itoa(t.Totalcost)+"        Avgprice :"+fmt.Sprintf("%.2f", t.Totalavgprice), color.Black)
+	bottomLabel := canvas.NewText("Name: BTC       Amount: "+fmt.Sprintf("%.4f", t.Totalamount)+
+		"       Cost: $"+fmt.Sprintf("%.4f", t.Totalcost)+"        Avgprice :"+fmt.Sprintf("%.4f", t.Totalavgprice), color.Black)
 	bottomLabel.Alignment = fyne.TextAlignCenter
 	bottomLabel.TextSize = 15
 
@@ -151,24 +155,28 @@ func Createfyne(db *sql.DB) {
 		t := Total{}
 		err := db.QueryRow("SELECT SUM(amount) FROM cryptolist").Scan(&t.Totalamount)
 		if err != nil {
-			panic(err)
+			log.Println("Failed to Select SUM(amount):", err)
+			return
 		}
 		totalAmountProift = t.Totalamount
 		err = db.QueryRow("SELECT SUM(cost) FROM cryptolist").Scan(&t.Totalcost)
 		if err != nil {
-			panic(err)
+			log.Println("Failed to Select SUM(cost):", err)
+			return
 		}
 		totalCost = t.Totalcost
 		err = db.QueryRow("SELECT SUM(cost)/SUM(amount) FROM cryptolist").Scan(&t.Totalavgprice)
 		if err != nil {
-			panic(err)
+			log.Println("Failed to Select SUM(cost)/SUM(amount): ", err)
+			return
 		}
-		bottomLabel.Text = fmt.Sprintf("Name: BTC       Amount: "+strconv.Itoa(t.Totalamount)+
-			"       Cost: $"+strconv.Itoa(t.Totalcost)+"        Avgprice :"+fmt.Sprintf("%.2f", t.Totalavgprice), color.Black)
+		bottomLabel.Text = "Name: BTC       Amount: " + fmt.Sprintf("%.4f", t.Totalamount) +
+			"       Cost: $" + fmt.Sprintf("%.4f", t.Totalcost) + "        Avgprice :" + strconv.FormatFloat(t.Totalavgprice, 'f', 2, 64)
 		bottomLabel.Refresh()
-		fmt.Println("Reset觸發")
+
+		log.Println("Reset Button Activated")
 	})
-	middleWindow.Add(resetButton)
+	middleHBox.Add(resetButton)
 
 	//總量現價
 	curValue = canvas.NewText("Current Value: $0.00", color.NRGBA{R: 231, G: 171, B: 78, A: 255})
@@ -199,42 +207,36 @@ func insertinfo(db *sql.DB, name string, amount, cost, avgcost float64) {
 
 	insertStmt, err := db.Prepare("INSERT INTO cryptolist(name,amount,cost,avgcost) VALUES(?,?,?,?)")
 	if err != nil {
-		panic(err)
+		log.Println("Failed to insert info: ", err)
+		return
 	}
 	_, err = insertStmt.Exec(name, amount, cost, avgcost)
 	if err != nil {
-		panic(err)
+		log.Println("Failed to execute stmt: ", err)
+		return
 	}
-	fmt.Println("Insert complete")
+	log.Println("Insert complete")
 }
 
 func Updatecurrentprice(price string) {
 	floatPrice, err := strconv.ParseFloat(price, 64)
 	if err != nil {
-		fmt.Println("無法轉換為 float64")
+		log.Println("Failed to parse Price: ", err)
 		return
 	}
-	fmt.Println("順利進入Updatacurrentprice")
+	log.Println("Current Price Updated")
+
 	//計算總價值
-	value := totalAmountProift * int(floatPrice)
+	value := totalAmountProift * floatPrice
 	formattedValue := strconv.FormatInt(int64(value), 10)
 	formattedValueWithCommas := addCommas(formattedValue)
-	//計算總獲利
-	profit := value - totalCost
-	formattedProfit := strconv.FormatInt(int64(profit), 10)
-	formattedProfitWithCommas := addCommas(formattedProfit)
-	//計算總獲利%數
-	percentProfitBasis := value / totalCost
-	percentProfit := percentProfitBasis * 100
-	formattedPercentProfit := strconv.FormatInt(int64(percentProfit), 10)
-	formattedPercentProfitWithCommas := addCommas(formattedPercentProfit)
 
-	curPriceText.Text = "Current Price: $" + fmt.Sprintf("%.2f", floatPrice)
-	curProfit.Text = "Total Profit: +" + formattedProfitWithCommas + "(" + formattedPercentProfitWithCommas + "%)"
+	profitORlost(value, totalCost)
+
+	curPriceText.Text = "Current Price: $" + fmt.Sprintf("%.4f", floatPrice)
 	curValue.Text = "Current Value: $" + formattedValueWithCommas
 
 	curPriceText.Refresh()
-	curProfit.Refresh()
 	curValue.Refresh()
 }
 
@@ -245,4 +247,32 @@ func addCommas(s string) string {
 		return s
 	}
 	return addCommas(s[:n-3]) + "," + s[n-3:]
+}
+
+func profitORlost(value, cost float64) {
+	if value > cost {
+		profit := value - cost
+		formattedProfit := strconv.FormatInt(int64(profit), 10)
+		formattedProfitWithCommas := addCommas(formattedProfit)
+
+		percentProfitBasis := value / totalCost
+		percentProfit := percentProfitBasis * 100
+		formattedPercentProfit := strconv.FormatInt(int64(percentProfit), 10)
+		formattedPercentProfitWithCommas := addCommas(formattedPercentProfit)
+		curProfit.Text = "Total Profit: +" + formattedProfitWithCommas + "(" + formattedPercentProfitWithCommas + "%)"
+
+		curProfit.Refresh()
+	} else {
+		lost := cost - value
+		formattedLost := strconv.FormatInt(int64(lost), 10)
+		formattedLostWithCommas := addCommas(formattedLost)
+
+		percentLostBasis := 1 - (value / totalCost)
+		percentLost := percentLostBasis * 100
+		formattedPercentLost := strconv.FormatInt(int64(percentLost), 10)
+		formattedPercentLostWithCommas := addCommas(formattedPercentLost)
+		curProfit.Text = "Total Profit: -" + formattedLostWithCommas + "(" + formattedPercentLostWithCommas + "%)"
+
+		curProfit.Refresh()
+	}
 }

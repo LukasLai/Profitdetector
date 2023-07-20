@@ -24,22 +24,23 @@ func main() {
 		for {
 			_, message, err := conn.ReadMessage()
 			if err != nil {
-				log.Fatal("無法讀取訊息：", err)
+				log.Fatal("Unable to read message：", err)
 			}
 
 			// 解析 JSON 訊息
 			var data map[string]interface{}
 			err = json.Unmarshal(message, &data)
 			if err != nil {
-				log.Fatal("無法解析 JSON 訊息：", err)
+				log.Fatal("Unable to unmarshal json:", err)
 			}
 
 			// 提取 "b" 欄位的值
 			buyPrice, ok := data["b"].(string)
 			if !ok {
-				log.Fatal("無法取得 buyPrice")
+				log.Fatal("Unable to get buyPrice")
 			}
-
+			//暫停0.5秒
+			time.Sleep(time.Millisecond * 500) //因使用並行運算，主程式若來不及創建完GUI，gui.Updatecurrentprice(buyPrice)將會出錯
 			gui.Updatecurrentprice(buyPrice)
 			time.Sleep(time.Second * 5)
 		}
