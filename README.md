@@ -10,6 +10,6 @@ Key features of Profitdetector:
 3.Profit/Loss Calculation: Based on the current price and the purchase price from the database, the app calculates and presents the potential profit or loss for the user's Bitcoin investment.
 
 4.User-Friendly Interface: Profitdetector has a user-friendly interface that allows users to easily input their purchase price and view the results.
-![1691118860086](https://github.com/LukasLai/Profitdetector/assets/133328740/29afb4e5-50f4-481f-9424-59d02ca0b715)
-![1691119148509](https://github.com/LukasLai/Profitdetector/assets/133328740/a4983347-ff35-45b1-96a9-8f98c7eea03e)
 
+![1691119148509](https://github.com/LukasLai/Profitdetector/assets/133328740/9bdcae52-2def-41dd-8517-850bb6ca5bd0)
+![1691118860086](https://github.com/LukasLai/Profitdetector/assets/133328740/42550508-e0e3-44d3-8ff9-345206e48719)
