@@ -11,5 +11,6 @@ Key features of Profitdetector:
 
 4.User-Friendly Interface: Profitdetector has a user-friendly interface that allows users to easily input their purchase price and view the results.
 
-![1691119148509](https://github.com/LukasLai/Profitdetector/assets/133328740/9bdcae52-2def-41dd-8517-850bb6ca5bd0)
-![1691118860086](https://github.com/LukasLai/Profitdetector/assets/133328740/42550508-e0e3-44d3-8ff9-345206e48719)
+![1691665219760](https://github.com/LukasLai/Profitdetector/assets/133328740/f4dc8193-201a-4348-9a8f-7aa3f0aa378f)
+![1691665273075](https://github.com/LukasLai/Profitdetector/assets/133328740/77b9bfb6-065b-4751-9457-443c75c3df22)
+
