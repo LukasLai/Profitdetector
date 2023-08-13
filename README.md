@@ -1,4 +1,16 @@
 # Profitdetector
+Profitdetector是一款設計用來幫助使用者偵測比特幣的當前價格並將其與儲存在數據庫中的信息進行比較的移動應用程式。該應用程式的主要目標是確定當前的比特幣價格是否對使用者來說是盈利還是虧損。
+
+Profitdetector的主要特點包括：
+
+1.即時比特幣價格：該應用程式從可靠來源獲取並顯示最新的比特幣價格，向使用者提供最新的信息。
+
+2.數據庫比較：該應用程式將當前的比特幣價格與儲存在數據庫中的歷史數據進行比較。這些數據可能包括使用者比特幣持有的購買價格或成本基礎。
+
+3.盈利/虧損計算：基於當前價格和數據庫中的購買價格，該應用程式計算並呈現出使用者比特幣投資的潛在盈利或虧損。
+
+4.用戶友好的界面：Profitdetector具有用戶友好的界面，允許使用者輕鬆輸入其購買價格並查看結果。
+
 Profitdetector is a mobile application designed to assist users in detecting the current price of Bitcoin and comparing it with the information stored in a database. The main goal of the app is to determine whether the current Bitcoin price represents a profit or loss for the user.
 
 Key features of Profitdetector:
